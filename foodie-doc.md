@@ -1,46 +1,113 @@
 # Foodie — Online Food Ordering Website
 
-> Pure HTML + CSS + JavaScript project. Koi backend nahi, koi framework nahi. Seedha browser mein chalta hai.
+> HTML + CSS + JavaScript + **PHP + MySQL** project. Frontend se backend tak complete — database mein data permanently save hota hai.
 
 ---
 
 ## Project Overview
 
-**Foodie** ek front-end food ordering website hai jahan users menu browse kar sakte hain, cart mein items add kar sakte hain, aur order place kar sakte hain. Saara data browser ki **localStorage** mein save hota hai — koi server, koi database ki zaroorat nahi.
+**Foodie** ek full-stack food ordering website hai jahan users menu browse kar sakte hain, cart mein items add kar sakte hain, aur order place kar sakte hain. Saara data **MySQL database** mein permanently save hota hai — PHP backend API calls handle karta hai aur user sessions PHP sessions se manage hoti hain.
 
 **Main Features:**
-- User Signup / Sign In / Sign Out
+- User Signup / Sign In / Sign Out (password hashed — secure)
 - 12-item food menu with price and tags
 - Shopping cart with quantity controls
 - Order placement with delivery details (name, phone, address)
-- Order history page (login required)
+- Order history page (login required — sirf apne orders dikhte hain)
 - Customer reviews carousel (auto-play)
 - Fully responsive (mobile-friendly)
+- **One-click database setup** (`setup.php`)
 
 ---
 
 ## Folder & File Structure
 
 ```
-foodie-simple/
+foodie-simple-js/
 │
 ├── index.html        ← Home page (hero, features, menu preview, reviews)
-├── menu.html         ← Full menu + cart sidebar
+├── menu.html         ← Full menu + order modal
 ├── about.html        ← About us (static page)
 ├── service.html      ← Order history page (login required)
 ├── signin.html       ← Login form
 ├── signup.html       ← Registration form
 │
+├── setup.php         ← Database setup — browser mein kholo, sab automatic
+├── database.sql      ← SQL script — phpMyAdmin mein import karo
+│
 ├── css/
 │   └── style.css     ← Single CSS file for all pages
 │
-└── js/
-    ├── auth.js       ← Signup, signin, signout, session management
-    ├── app.js        ← Navbar, mobile menu, active link highlight
-    ├── menu.js       ← Menu data (12 items), render, order modal
-    ├── cart.js       ← Cart add/remove/qty/total logic
-    ├── orders.js     ← Order history page rendering
-    └── reviews.js    ← Reviews carousel autoplay
+├── js/
+│   ├── auth.js       ← Signup, signin, signout (PHP API calls)
+│   ├── app.js        ← Navbar, mobile menu, active link highlight
+│   ├── menu.js       ← Menu data (12 items), render, order modal (PHP API)
+│   ├── cart.js       ← Cart add/remove/qty/total logic
+│   ├── orders.js     ← Order history — PHP se orders fetch karna
+│   └── reviews.js    ← Reviews carousel autoplay
+│
+└── php/
+    ├── config.php    ← Database connection + session start
+    ├── signup.php    ← User registration API
+    ├── signin.php    ← User login API
+    ├── session.php   ← Check login status API
+    ├── logout.php    ← Logout API
+    ├── place_order.php ← Order place karna API
+    └── get_orders.php  ← User ke orders fetch karna API
+```
+
+---
+
+## Database Structure (MySQL)
+
+**Database name:** `foodie_simple`
+
+### Table: `users`
+| Column | Type | Description |
+|---|---|---|
+| id | INT (PK, Auto) | User ID |
+| name | VARCHAR(100) | Full name |
+| email | VARCHAR(150) UNIQUE | Email address |
+| password | VARCHAR(255) | Hashed password (password_hash) |
+| created_at | TIMESTAMP | Account creation date |
+
+### Table: `orders`
+| Column | Type | Description |
+|---|---|---|
+| id | INT (PK, Auto) | Order ID |
+| order_code | VARCHAR(50) | Display code (e.g. ORD-ABC123) |
+| user_id | INT (FK → users) | Kis user ne order kiya |
+| item_name | VARCHAR(100) | Food item ka naam |
+| item_emoji | VARCHAR(10) | Item emoji |
+| item_price | INT | Price in Rs. |
+| customer_name | VARCHAR(100) | Customer name |
+| phone | VARCHAR(20) | Phone number |
+| address | TEXT | Delivery address |
+| payment | VARCHAR(50) | Payment method (Cash on Delivery) |
+| status | VARCHAR(50) | Order status (Preparing) |
+| created_at | TIMESTAMP | Order placement date |
+
+---
+
+## PHP Backend — API Endpoints
+
+| File | Method | Kya Karta Hai |
+|---|---|---|
+| `php/signup.php` | POST | Naya user register karta hai (password hash ke sath) |
+| `php/signin.php` | POST | Login — email + password verify, PHP session set |
+| `php/session.php` | GET | Check karo user logged in hai ya nahi |
+| `php/logout.php` | GET | Session destroy — logout |
+| `php/place_order.php` | POST | Order database mein save karo |
+| `php/get_orders.php` | GET | Logged-in user ke orders return karo |
+
+**Sab endpoints JSON response dete hain:**
+```json
+{ "success": true, "user": { "id": 1, "name": "Ahmed", "email": "ahmed@test.com" } }
+```
+
+**Error example:**
+```json
+{ "success": false, "message": "Invalid email or password." }
 ```
 
 ---
@@ -50,7 +117,7 @@ foodie-simple/
 | Page | Kya Hai | JS Files Used |
 |---|---|---|
 | `index.html` | Home page — hero, features, 6-item preview, reviews carousel | app.js, reviews.js |
-| `menu.html` | Full 12-item menu + cart sidebar + order modal | app.js, menu.js, cart.js, auth.js |
+| `menu.html` | Full 12-item menu + order modal | app.js, menu.js, cart.js, auth.js |
 | `service.html` | Order history — login check, user ke orders dikhao | app.js, orders.js, auth.js |
 | `signin.html` | Login form (email + password) | app.js, auth.js |
 | `signup.html` | Registration form (name + email + password) | app.js, auth.js |
@@ -64,7 +131,8 @@ foodie-simple/
 1. User visits index.html (Home)
         ↓
 2. Sign Up (signup.html) or Sign In (signin.html)
-   → Account localStorage mein save hota hai
+   → PHP backend mein password hash hoke database mein save hota hai
+   → PHP session set hoti hai
         ↓
 3. Menu browse karo (menu.html)
    → 12 items — price, description, tags
@@ -73,43 +141,81 @@ foodie-simple/
    → Modal khulta hai: name, phone, address fill karo
         ↓
 5. Order placed
-   → foodie_orders localStorage mein save hota hai
+   → PHP API call → MySQL database mein save hota hai
         ↓
 6. Order history dekho (service.html)
-   → Sirf logged-in user ke orders dikhte hain
+   → PHP se sirf logged-in user ke orders fetch hote hain
 ```
 
 ---
 
 ## JavaScript Modules — Coding Explanation
 
-### `auth.js` — User Authentication
+### `auth.js` — User Authentication (PHP API)
 
-Koi server nahi — sab localStorage mein.
+Sab authentication PHP backend se hoti hai. JavaScript `fetch()` calls karta hai.
 
 ```javascript
 const Auth = {
-  USERS_KEY: 'foodie_users',           // sab registered users
-  CURRENT_USER_KEY: 'foodie_current_user', // logged-in user
-
-  signup(name, email, password)  // naya user banao
-  signin(email, password)        // login karo
-  signout()                      // logout — current user remove karo
-  getCurrentUser()               // logged-in user ka object return karo
-  isLoggedIn()                   // true/false
+  async checkSession()              // PHP se login status check karo
+  getCurrentUser()                  // cached user object return karo
+  isLoggedIn()                      // true/false
+  async signup(name, email, password) // POST → php/signup.php
+  async signin(email, password)     // POST → php/signin.php
+  async signout()                   // GET → php/logout.php
 }
 ```
 
 **signup() flow:**
-1. Existing users check karo (duplicate email?)
-2. New user object banao: `{ id, name, email, password, createdAt }`
-3. `foodie_users` array mein push karo
-4. Safe user (bina password) `foodie_current_user` mein set karo
+1. `fetch('php/signup.php')` — name, email, password POST karo
+2. PHP side: duplicate email check → password hash → database INSERT
+3. PHP session set → user object return
+4. Redirect to index.html
 
 **signin() flow:**
-1. `foodie_users` mein email + password match dhundho
-2. Match mila → `foodie_current_user` set karo
-3. Nahi mila → error return karo
+1. `fetch('php/signin.php')` — email, password POST karo
+2. PHP side: email se user find → `password_verify()` se match
+3. Match → PHP session set → user object return
+4. Redirect to index.html
+
+**Security:** Passwords `password_hash(PASSWORD_DEFAULT)` se hash hote hain — plaintext kabhi store nahi hota.
+
+---
+
+### `menu.js` — Menu Data & Order Modal (PHP API)
+
+12 food items hard-coded array mein hain:
+
+```javascript
+const MenuData = [
+  { id: 'pizza',    name: 'Pizza',    price: 1500, tags: ['Popular', 'Italian'] },
+  { id: 'beef-burger', name: 'Beef Burger', price: 500, tags: ['Bestseller'] },
+  { id: 'biryani', name: 'Biryani',  price: 700,  tags: ['Desi', 'Bestseller'] },
+  // ... 9 more items
+]
+```
+
+**Order placement flow:**
+1. `openOrderModal(itemId)` — selected item store karo, modal kholo
+2. Agar user logged in hai → name auto-fill
+3. `placeOrder()` — validate name/phone/address
+4. `fetch('php/place_order.php')` — order data POST karo
+5. PHP side: database INSERT → order code generate → success return
+6. Success alert dikhao
+
+---
+
+### `orders.js` — Order History (PHP API)
+
+```javascript
+async function renderOrders() {
+  const res = await fetch('php/get_orders.php');  // PHP se orders fetch
+  const data = await res.json();
+  // data.orders array ko cards mein render karo
+}
+```
+
+Orders sirf logged-in user ke dikhte hain — PHP backend `user_id` se filter karta hai.
 
 ---
 
@@ -128,50 +234,7 @@ const Cart = {
 }
 ```
 
-Cart data `foodie_cart` key mein save hota hai:
-```json
-[
-  { "id": "pizza", "name": "Pizza", "emoji": "🍕", "price": 1500, "qty": 2 },
-  { "id": "biryani", "name": "Biryani", "emoji": "🍛", "price": 700, "qty": 1 }
-]
-```
-
----
-
-### `menu.js` — Menu Data & Order Modal
-
-12 food items hard-coded array mein hain:
-
-```javascript
-const MenuData = [
-  { id: 'pizza',    name: 'Pizza',    price: 1500, tags: ['Popular', 'Italian'] },
-  { id: 'beef-burger', name: 'Beef Burger', price: 500, tags: ['Bestseller'] },
-  { id: 'biryani', name: 'Biryani',  price: 700,  tags: ['Desi', 'Bestseller'] },
-  // ... 9 more items
-]
-```
-
-**Order placement flow:**
-1. `openOrderModal(itemId)` — selected item store karo, modal kholo
-2. Agar user logged in hai → name auto-fill
-3. `placeOrder()` — validate name/phone/address
-4. Order object banao aur `foodie_orders` array mein push karo
-
-**Order object structure:**
-```json
-{
-  "id": "ORD-ABC123",
-  "item": "Pizza",
-  "emoji": "🍕",
-  "price": 1500,
-  "name": "Ahmed Ali",
-  "phone": "03001234567",
-  "address": "House 5, Block A, Lahore",
-  "payment": "Cash on Delivery",
-  "status": "Preparing",
-  "date": "2024-01-15T10:30:00.000Z"
-}
-```
+> Note: Cart abhi localStorage mein hai — ye temporary data hai (checkout ke baad order DB mein jaata hai).
 
 ---
 
@@ -179,19 +242,11 @@ const MenuData = [
 
 4 static reviews hain. Auto-play 5 seconds mein next slide pe jaata hai.
 
-```javascript
-renderReviews()   // slides aur dots DOM mein render karo
-goToSlide(index)  // specific slide pe jao + autoplay reset
-nextSlide()       // next slide (circular — last ke baad first)
-prevSlide()       // prev slide (circular)
-startAutoPlay()   // setInterval 5000ms
-```
-
 ---
 
 ### `app.js` — Shared Navbar Logic
 
-Har page pe load hota hai. 3 kaam karta hai:
+Har page pe load hota hai. Pehle `Auth.checkSession()` call karta hai (PHP se login check), phir:
 
 ```javascript
 updateNavAuth()        // Login check — "Hi, Name + Sign Out" ya "Sign In / Sign Up"
@@ -201,34 +256,41 @@ initMobileMenu()       // Hamburger menu toggle (mobile screens)
 
 ---
 
-## localStorage — Data Storage Map
+## How to Setup & Run
 
-Saara data browser mein rehta hai:
+### Naye Laptop / Computer Pe Setup
 
-| localStorage Key | Kya Store Hota Hai |
-|---|---|
-| `foodie_users` | Sab registered users ka array |
-| `foodie_current_user` | Logged-in user ka object (session) |
-| `foodie_cart` | Cart items array |
-| `foodie_orders` | Placed orders array |
+**Requirements:** PHP + MySQL hona chahiye (XAMPP install karo — easiest)
 
-> **Note:** Agar user browser history/cache clear kare toh ye data delete ho jaata hai. Alag device pe alag account banana hoga — ye design intentional hai (no server needed).
+#### Method 1 — One-Click Setup (Recommended)
 
----
+1. XAMPP install karo aur Apache + MySQL start karo
+2. Project folder ko `C:/xampp/htdocs/` mein copy karo
+3. Browser mein kholo: `http://localhost/foodie-simple-js/setup.php`
+4. MySQL username/password daalo → **"Setup Database"** button dabao
+5. Sab automatic ho jayega — database, tables, config sab!
+6. `http://localhost/foodie-simple-js/` pe project use karo
 
-## How to Run
+#### Method 2 — SQL Import (phpMyAdmin)
 
-### Option 1 — Direct Open (Simplest)
-`foodie-simple` folder mein `index.html` file double-click karo — browser mein khul jaayega.
+1. XAMPP mein phpMyAdmin kholo (`http://localhost/phpmyadmin`)
+2. "Import" tab pe jao
+3. `database.sql` file select karo → "Go" dabao
+4. `php/config.php` mein apna MySQL username/password daalo
+5. Project ready!
 
-### Option 2 — VS Code Live Server
-VS Code mein folder kholo → `index.html` pe right-click → **"Open with Live Server"**
+#### Method 3 — Command Line
 
-### Option 3 — Deploy Online (Free)
-- **Netlify:** netlify.com pe jao → folder drag-and-drop → free live URL
-- **GitHub Pages:** GitHub repo → Settings → Pages → branch select
+```bash
+# Database setup
+mysql -u root -p < database.sql
 
-> **Koi npm install nahi, koi build nahi, koi server nahi.** Pure HTML files hain.
+# PHP server start
+cd foodie-simple-js
+php -S localhost:8001
+
+# Browser mein kholo: http://localhost:8001
+```
 
 ---
 
@@ -238,10 +300,22 @@ VS Code mein folder kholo → `index.html` pe right-click → **"Open with Live 
 |---|---|
 | HTML5 | Sab pages ki structure |
 | CSS3 | Styling, animations, responsive (Flexbox + Grid) |
-| Vanilla JavaScript (ES6+) | Poori functionality — koi jQuery/React nahi |
-| localStorage API | Users, cart, orders ka data store karna |
+| Vanilla JavaScript (ES6+) | Frontend logic — fetch API se PHP backend calls |
+| **PHP 8+** | Backend API — authentication, orders, sessions |
+| **MySQL** | Database — users aur orders permanently store |
+| **password_hash()** | Secure password hashing (bcrypt) |
+| PHP Sessions | User login state manage karna |
 | CSS Variables | Color theme (`--primary: #e74c3c`) |
 
 ---
 
-*Foodie — Project Documentation | Client Handover*
+## Security Features
+
+- Passwords **hashed** hain (`password_hash` / `password_verify`) — plaintext kabhi store nahi hota
+- PHP **prepared statements** use hote hain — SQL injection se protection
+- User sessions **server-side** PHP sessions se manage hoti hain
+- Orders **user-specific** hain — ek user doosre ke orders nahi dekh sakta
+
+---
+
+*Foodie — Project Documentation | PHP + MySQL Backend*
