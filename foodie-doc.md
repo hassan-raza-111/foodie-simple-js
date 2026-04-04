@@ -149,6 +149,108 @@ foodie-simple-js/
 
 ---
 
+## Detailed Use Flow — Har Feature Step by Step
+
+### 1. Pehli Baar Website Khulna
+
+1. User browser mein `http://localhost/foodie-simple-js/` kholta hai
+2. **Home page** (index.html) load hota hai
+3. PHP se session check hota hai — user logged in nahi hai
+4. Navbar mein **"Sign In"** aur **"Sign Up"** buttons dikhte hain
+5. Hero section, features, menu preview, reviews carousel dikhta hai
+
+### 2. Sign Up (Account Banana)
+
+1. User navbar mein **"Sign Up"** button click karta hai
+2. `signup.html` page khulta hai — form dikhta hai (Name, Email, Password)
+3. User form fill karta hai, **"Sign Up"** button dabata hai
+4. JavaScript validation hoti hai:
+   - Name khali? → red error dikhao
+   - Email khali? → red error dikhao
+   - Password 6 se kam? → red error dikhao
+5. Validation pass → `fetch('php/signup.php')` call hoti hai
+6. PHP backend:
+   - Email duplicate check karta hai → agar already hai → error: "An account with this email already exists."
+   - Naya user hai → password `password_hash()` se hash hota hai → `users` table mein INSERT
+   - PHP session set hoti hai
+7. Success → user **automatically `index.html` pe redirect** ho jaata hai
+8. Ab navbar mein **"Hi, [Name]"** aur **"Sign Out"** button dikhta hai
+
+### 3. Sign In (Login)
+
+1. User **"Sign In"** click karta hai → `signin.html` page
+2. Email aur Password daalta hai → **"Sign In"** button
+3. JavaScript validation: dono fields required hain
+4. `fetch('php/signin.php')` call hoti hai
+5. PHP backend:
+   - Email se user find karta hai database mein
+   - `password_verify()` se password match karta hai
+   - Match nahi → error: "Invalid email or password."
+   - Match → PHP session set → user object return
+6. Success → **index.html redirect** → navbar mein "Hi, [Name]" dikhta hai
+
+### 4. Menu Browse Karna
+
+1. User navbar mein **"Menu"** click karta hai → `menu.html`
+2. 12 food items grid mein dikhte hain:
+   - Har item mein: emoji, name, description, tags (Popular/Desi/etc.), price
+   - **"Order Now"** button har item pe
+3. User scroll karke menu browse karta hai
+
+### 5. Order Place Karna
+
+1. User kisi item pe **"Order Now"** click karta hai (e.g., Biryani)
+2. **Order Modal** popup hota hai:
+   - Item name aur price dikhta hai: "🍛 Biryani — Rs. 700"
+   - 3 fields: Name (auto-filled agar login hai), Phone Number, Delivery Address
+   - "Cash on Delivery" likha hota hai
+3. User phone aur address fill karta hai → **"Place Order"** button
+4. Validation:
+   - Name khali? → error
+   - Phone 10 se kam characters? → error
+   - Address khali? → error
+5. Agar user **login nahi** hai → alert: "Please login first" → signin.html redirect
+6. Validation pass → `fetch('php/place_order.php')` call hoti hai
+7. PHP backend:
+   - Order code generate: "ORD-ABC123"
+   - `orders` table mein INSERT (user_id ke sath)
+8. Success → modal band hota hai → **🎉 "Order Placed!" alert** dikhta hai
+9. User **"Continue"** click karta hai → alert band
+
+### 6. Order History Dekhna
+
+1. User navbar mein **"Services"** click karta hai → `service.html`
+2. Agar **login nahi** hai → **signin.html pe redirect** ho jaata hai
+3. Login hai → "How It Works" section dikhta hai (3 steps)
+4. Neeche **order cards** dikhte hain (PHP se fetch hote hain)
+5. Har order card mein:
+   - Order code (e.g., ORD-ABC123)
+   - Date aur time
+   - Status badge ("Preparing")
+   - Price
+6. Card click karne pe **expand** hota hai — full details dikhte hain:
+   - Item name + emoji
+   - Delivery address
+   - Phone number
+   - Payment method
+7. Agar **koi order nahi** hai → "No orders yet" message + "Browse Menu" button
+
+### 7. Sign Out
+
+1. User navbar mein **"Sign Out"** button click karta hai
+2. `fetch('php/logout.php')` call hoti hai → PHP session destroy
+3. User **index.html pe redirect** ho jaata hai
+4. Navbar mein wapas "Sign In" / "Sign Up" buttons aa jaate hain
+
+### 8. Already Logged In User
+
+1. User browser band karke dubara kholta hai
+2. Page load pe `Auth.checkSession()` call hota hai → PHP se session check
+3. Agar session active hai → navbar mein "Hi, [Name]" dikhta hai
+4. Agar session expire ho gayi → "Sign In" / "Sign Up" dikhta hai
+
+---
+
 ## JavaScript Modules — Coding Explanation
 
 ### `auth.js` — User Authentication (PHP API)
