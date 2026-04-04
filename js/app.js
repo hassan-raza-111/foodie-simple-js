@@ -2,7 +2,8 @@
    App Module - Shared: nav auth state, mobile menu
    ======================================== */
 
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', async function () {
+  await Auth.checkSession();
   updateNavAuth();
   highlightCurrentPage();
   initMobileMenu();
@@ -28,8 +29,8 @@ function updateNavAuth() {
   }
 }
 
-function handleSignout() {
-  Auth.signout();
+async function handleSignout() {
+  await Auth.signout();
   window.location.href = 'index.html';
 }
 
